@@ -63,11 +63,20 @@ ifneq ($(filter $(UM_4_9_FAMILY) $(UM_4_14_FAMILY) $(UM_4_19_FAMILY) $(UM_5_4_FA
 endif
 
 # Enable Gralloc4 on UM platforms that support it
-ifneq ($(filter $(UM_5_4_FAMILY),$(TARGET_BOARD_PLATFORM)),)
+ifneq (,$(filter 5.4 5.10 5.15, $(TARGET_KERNEL_VERSION)))
     SOONG_CONFIG_qtidisplay_gralloc4 := true
 endif
 
-# Mark GRALLOC_USAGE_PRIVATE_WFD as valid gralloc bits
+# Select AR variant of A-HAL dependencies
+ifneq (,$(filter 5.4 5.10 5.15, $(TARGET_KERNEL_VERSION)))
+    TARGET_USES_QCOM_AUDIO_AR ?= true
+endif
+
+# Enable displayconfig on every UM platform
+ifeq ($(filter $(UM_PLATFORMS),$(TARGET_BOARD_PLATFORM)),)
+    SOONG_CONFIG_qtidisplay_displayconfig_enabled := true
+endif
+
 TARGET_ADDITIONAL_GRALLOC_10_USAGE_BITS ?= 0
 TARGET_ADDITIONAL_GRALLOC_10_USAGE_BITS += | (1 << 10)
 TARGET_ADDITIONAL_GRALLOC_10_USAGE_BITS += | (1 << 13)
@@ -80,6 +89,17 @@ endif
 
 # List of targets that use master side content protection
 MASTER_SIDE_CP_TARGET_LIST := msm8996 $(UM_4_4_FAMILY) $(UM_4_9_FAMILY) $(UM_4_14_FAMILY) $(UM_4_19_FAMILY)
+
+# Opt-in for old rmnet_data driver
+ifneq (,$(filter 5.15, $(TARGET_KERNEL_VERSION)))
+    SOONG_CONFIG_rmnetctl_old_rmnet_data := true
+endif
+
+# Use full QTI gralloc struct for GKI 2.0 targets
+ifneq (,$(filter 5.10 5.15, $(TARGET_KERNEL_VERSION)))
+    TARGET_GRALLOC_HANDLE_HAS_CUSTOM_CONTENT_MD_RESERVED_SIZE ?= true
+    TARGET_GRALLOC_HANDLE_HAS_RESERVED_SIZE ?= true
+endif
 
 ifneq ($(filter $(UM_3_18_FAMILY),$(TARGET_BOARD_PLATFORM)),)
     MSM_VIDC_TARGET_LIST := $(UM_3_18_FAMILY)
